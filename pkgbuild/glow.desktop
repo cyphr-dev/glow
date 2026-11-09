@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Glow
+Name[da]=Glow
+Comment=RGB lighting controller for Omarchy
+Comment[da]=RGB-belysningsstyring til Omarchy
+Exec=glow %f
+Icon=glow
+Terminal=false
+Categories=Settings;HardwareSettings;
+StartupWMClass=glow

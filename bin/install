@@ -1,0 +1,22 @@
+#!/bin/sh
+set -eu
+
+ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
+"$ROOT/bin/build"
+
+# Install into user desktop and PATH so the app lands in the launcher immediately
+mkdir -p "$HOME/.local/bin" "$HOME/.local/share/applications" "$HOME/.local/share/icons/hicolor/scalable/apps"
+install -m755 "$ROOT/build/glow" "$HOME/.local/bin/glow"
+install -m644 "$ROOT/pkgbuild/glow.desktop" "$HOME/.local/share/applications/glow.desktop"
+install -m644 "$ROOT/pkgbuild/glow.svg" "$HOME/.local/share/icons/hicolor/scalable/apps/glow.svg"
+
+# Build Arch package with makepkg
+cd "$ROOT/pkgbuild"
+makepkg -fs --noconfirm || true
+
+# If passwordless sudo is available, install package system-wide as well
+if sudo -n true 2>/dev/null; then
+    exec makepkg -fsi --noconfirm "$@"
+fi
+
+echo "Installed glow to $HOME/.local/bin/glow and registered in app launcher."
