@@ -69,6 +69,67 @@ private slots:
         QCOMPARE(backend.color(), QString("#00C7BE"));
     }
 
+    void thermalReadingsWork()
+    {
+        Backend backend;
+        QVERIFY(backend.fanTemperature() > 0.0);
+        QVERIFY(backend.fanTemperatureString().contains("°C"));
+        QVERIFY(!backend.fanThermalStatus().isEmpty());
+        QVERIFY(!backend.fanThermalStatusColor().isEmpty());
+        QVERIFY(backend.fanSpeedEstimate() >= 0 && backend.fanSpeedEstimate() <= 100);
+    }
+
+    void fanProfileChanges()
+    {
+        Backend backend;
+        backend.setFanSpeedProfile("silent");
+        QCOMPARE(backend.fanSpeedProfile(), QString("silent"));
+
+        backend.setFanSpeedProfile("performance");
+        QCOMPARE(backend.fanSpeedProfile(), QString("performance"));
+
+        backend.setFanSpeedProfile("full_speed");
+        QCOMPARE(backend.fanSpeedProfile(), QString("full_speed"));
+        QCOMPARE(backend.fanSpeedEstimate(), 100);
+
+        backend.setFanSpeedProfile("standard");
+        QCOMPARE(backend.fanSpeedProfile(), QString("standard"));
+    }
+
+    void thermalReactiveMode()
+    {
+        Backend backend;
+        backend.setMode("thermal");
+        QCOMPARE(backend.mode(), QString("thermal"));
+        QCOMPARE(backend.thermalReactive(), true);
+        QVERIFY(backend.color().startsWith("#"));
+
+        backend.toggleThermalReactive();
+        QCOMPARE(backend.mode(), QString("static"));
+        QCOMPARE(backend.thermalReactive(), false);
+
+        backend.toggleThermalReactive();
+        QCOMPARE(backend.mode(), QString("thermal"));
+        QCOMPARE(backend.thermalReactive(), true);
+    }
+
+    void thermaltakeDeviceIncluded()
+    {
+        Backend backend;
+        bool foundTt = false;
+        const auto devs = backend.devices();
+        for (const auto &val : devs) {
+            const QVariantMap dev = val.toMap();
+            if (dev.value("type") == "fans" && dev.value("name").toString().contains("Thermaltake")) {
+                foundTt = true;
+                QVERIFY(dev.contains("temp"));
+                QVERIFY(dev.contains("status"));
+                break;
+            }
+        }
+        QVERIFY(foundTt);
+    }
+
     void themeFallsBack()
     {
         QTemporaryDir dir;

@@ -1,6 +1,7 @@
 {
   "Glow": "Glow",
   "Omarchy RGB lighting & hardware controller": "Omarchy RGB-belysning og hardwarestyring",
+  "Omarchy RGB lighting & Thermaltake fan hardware controller": "Omarchy RGB-belysning og Thermaltake-hardwarestyring",
   "%n device(s)": { "one": "%n enhed", "other": "%n enheder" },
   "Theme Synced (S)": "Tema synkroniseret (S)",
   "Sync Theme (S)": "Synkroniser tema (S)",
@@ -12,6 +13,7 @@
   "Static": "Statisk",
   "Breathing": "Åndende",
   "Spectrum": "Spektrum",
+  "Thermal": "Termisk",
   "Off": "Fra",
   "COLOR PRESETS (1 - 5)": "FORUDINDSTILLINGER (1 - 5)",
   "Hex Color Code": "Hex farvekode",
@@ -19,10 +21,19 @@
   "Keyboard Shortcuts": "Tastaturgenveje",
   "Toggle lights On / Off": "Tænd / sluk lys",
   "Sync with Omarchy desktop accent": "Synkroniser med Omarchy-farve",
+  "Toggle Thermal Reactive lighting mode": "Skift termisk reaktiv belysningstilstand",
   "Apply color presets": "Anvend farveforudindstillinger",
   "Navigate detected devices": "Naviger registrerede enheder",
   "Rescan hardware and drivers": "Genscan hardware og drivere",
   "Toggle this cheat-sheet": "Vis/skjul denne oversigt",
   "Quit Glow": "Afslut Glow",
-  "Got it": "Forstået"
+  "Got it": "Forstået",
+  "THERMALTAKE FANS & TEMPERATURES": "THERMALTAKE BLÆSERE & TEMPERATURER",
+  "THERMALTAKE FAN PROFILE": "THERMALTAKE BLÆSERPROFIL",
+  "FAN TEMPERATURE": "BLÆSERTEMPERATUR",
+  "FAN SPEED": "BLÆSERHASTIGHED",
+  "Silent": "Lydløs",
+  "Standard": "Standard",
+  "Performance": "Ydeevne",
+  "Full Speed": "Fuld hastighed"
 }

@@ -5,12 +5,12 @@ import QtQuick.Layouts
 
 ApplicationWindow {
     id: win
-    width: 980
-    height: 700
-    minimumWidth: 840
-    minimumHeight: 600
+    width: 1020
+    height: 760
+    minimumWidth: 880
+    minimumHeight: 640
     visible: true
-    title: qsTr("Glow — RGB Controller")
+    title: qsTr("Glow — RGB Controller & Thermaltake Monitor")
     color: "#0e0e10"
 
     Material.theme: Material.Dark
@@ -25,6 +25,7 @@ ApplicationWindow {
     Shortcut { sequence: "Q"; context: Qt.ApplicationShortcut; onActivated: Qt.quit() }
     Shortcut { sequence: "Space"; context: Qt.ApplicationShortcut; onActivated: backend.primaryAction() }
     Shortcut { sequence: "S"; context: Qt.ApplicationShortcut; onActivated: backend.applyThemeAccent(theme.accent) }
+    Shortcut { sequence: "T"; context: Qt.ApplicationShortcut; onActivated: backend.toggleThermalReactive() }
     Shortcut { sequence: "R"; context: Qt.ApplicationShortcut; onActivated: backend.rescan() }
     Shortcut { sequence: "Tab"; context: Qt.ApplicationShortcut; onActivated: backend.nextDevice() }
     Shortcut { sequence: "J"; context: Qt.ApplicationShortcut; onActivated: backend.nextDevice() }
@@ -43,7 +44,7 @@ ApplicationWindow {
 
         ColumnLayout {
             anchors.fill: parent
-            spacing: 20
+            spacing: 18
 
             // Header bar
             RowLayout {
@@ -97,10 +98,29 @@ ApplicationWindow {
                                 color: "#aaa"
                             }
                         }
+
+                        // Thermal quick-badge
+                        Rectangle {
+                            height: 20
+                            width: tempHeadText.implicitWidth + 14
+                            radius: Math.min(4, theme.radius)
+                            color: Qt.rgba(255, 255, 255, 0.06)
+                            border.color: backend.fanThermalStatusColor
+                            border.width: 1
+
+                            Text {
+                                id: tempHeadText
+                                anchors.centerIn: parent
+                                text: qsTr("❋ %1 (%2)").arg(backend.fanTemperatureString, backend.fanThermalStatus)
+                                font.pixelSize: 10
+                                font.bold: true
+                                color: backend.fanThermalStatusColor
+                            }
+                        }
                     }
 
                     Text {
-                        text: qsTr("Omarchy RGB lighting & hardware controller")
+                        text: qsTr("Omarchy RGB lighting & Thermaltake fan hardware controller")
                         font.pixelSize: 12
                         color: "#888892"
                     }
@@ -134,7 +154,7 @@ ApplicationWindow {
             // Driver status banner (if driver needs attention)
             Rectangle {
                 Layout.fillWidth: true
-                height: 40
+                height: 38
                 radius: Math.min(6, theme.radius)
                 color: backend.openRgbInstalled ? "#14251a" : "#2a1c0d"
                 border.color: backend.openRgbInstalled ? "#2ecc71" : "#e67e22"
@@ -173,7 +193,7 @@ ApplicationWindow {
             RowLayout {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                spacing: 20
+                spacing: 18
 
                 // Left column: Device Selector
                 Rectangle {
@@ -213,7 +233,7 @@ ApplicationWindow {
                                     ? Qt.rgba(255, 255, 255, 0.08)
                                     : (devMouse.containsMouse ? Qt.rgba(255, 255, 255, 0.03) : "transparent")
                                 border.color: (index === backend.selectedDeviceIndex)
-                                    ? theme.accent
+                                    ? (modelData.type === "fans" ? backend.fanThermalStatusColor : theme.accent)
                                     : Qt.rgba(1, 1, 1, 0.05)
                                 border.width: (index === backend.selectedDeviceIndex) ? 2 : 1
 
@@ -233,7 +253,9 @@ ApplicationWindow {
                                         width: 14
                                         height: 14
                                         radius: 7
-                                        color: backend.lightsOn ? backend.color : "#444"
+                                        color: modelData.type === "fans"
+                                            ? backend.fanThermalStatusColor
+                                            : (backend.lightsOn ? backend.color : "#444")
                                         border.color: Qt.rgba(1, 1, 1, 0.2)
                                         border.width: 1
                                     }
@@ -242,13 +264,38 @@ ApplicationWindow {
                                         Layout.fillWidth: true
                                         spacing: 2
 
-                                        Text {
-                                            text: modelData.name
-                                            font.pixelSize: 13
-                                            font.bold: true
-                                            color: "white"
-                                            elide: Text.ElideRight
+                                        RowLayout {
                                             Layout.fillWidth: true
+                                            spacing: 6
+
+                                            Text {
+                                                text: modelData.name
+                                                font.pixelSize: 13
+                                                font.bold: true
+                                                color: "white"
+                                                elide: Text.ElideRight
+                                                Layout.fillWidth: true
+                                            }
+
+                                            // Temperature pill if available
+                                            Rectangle {
+                                                visible: !!modelData.temp
+                                                height: 18
+                                                width: devTempText.implicitWidth + 10
+                                                radius: 9
+                                                color: Qt.rgba(0, 0, 0, 0.45)
+                                                border.color: backend.fanThermalStatusColor
+                                                border.width: 1
+
+                                                Text {
+                                                    id: devTempText
+                                                    anchors.centerIn: parent
+                                                    text: modelData.temp || ""
+                                                    font.pixelSize: 10
+                                                    font.bold: true
+                                                    color: backend.fanThermalStatusColor
+                                                }
+                                            }
                                         }
 
                                         Text {
@@ -265,7 +312,7 @@ ApplicationWindow {
                     }
                 }
 
-                // Right column: Lighting controls & preview
+                // Right column: Lighting controls & preview & Thermaltake Monitor
                 Rectangle {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
@@ -276,17 +323,17 @@ ApplicationWindow {
 
                     ScrollView {
                         anchors.fill: parent
-                        anchors.margins: 20
+                        anchors.margins: 18
                         contentWidth: availableWidth
 
                         ColumnLayout {
                             width: parent.width
-                            spacing: 20
+                            spacing: 18
 
                             // Visualizer glow card
                             Rectangle {
                                 Layout.fillWidth: true
-                                height: 130
+                                height: 120
                                 radius: Math.min(10, theme.radius)
                                 color: "#0d0d10"
                                 border.color: Qt.rgba(1, 1, 1, 0.06)
@@ -294,24 +341,24 @@ ApplicationWindow {
 
                                 Item {
                                     anchors.centerIn: parent
-                                    width: 180
-                                    height: 80
+                                    width: 200
+                                    height: 74
 
                                     // Outer soft glow
                                     Rectangle {
                                         id: glowHalo
                                         anchors.centerIn: parent
-                                        width: parent.width + 30
-                                        height: parent.height + 30
-                                        radius: theme.radius + 15
+                                        width: parent.width + 28
+                                        height: parent.height + 28
+                                        radius: theme.radius + 14
                                         color: backend.lightsOn ? backend.color : "transparent"
                                         opacity: backend.lightsOn ? 0.35 : 0.0
 
                                         SequentialAnimation on opacity {
-                                            running: backend.lightsOn && backend.mode === "breathing"
+                                            running: backend.lightsOn && (backend.mode === "breathing" || backend.mode === "thermal")
                                             loops: Animation.Infinite
-                                            NumberAnimation { to: 0.1; duration: 1500; easing.type: Easing.InOutQuad }
-                                            NumberAnimation { to: 0.6; duration: 1500; easing.type: Easing.InOutQuad }
+                                            NumberAnimation { to: 0.15; duration: 1500; easing.type: Easing.InOutQuad }
+                                            NumberAnimation { to: 0.65; duration: 1500; easing.type: Easing.InOutQuad }
                                         }
                                     }
 
@@ -325,11 +372,13 @@ ApplicationWindow {
 
                                         ColumnLayout {
                                             anchors.centerIn: parent
-                                            spacing: 4
+                                            spacing: 3
 
                                             Text {
                                                 Layout.alignment: Qt.AlignHCenter
-                                                text: backend.lightsOn ? qsTr("ILLUMINATED") : qsTr("OFF")
+                                                text: !backend.lightsOn
+                                                    ? qsTr("OFF")
+                                                    : (backend.mode === "thermal" ? qsTr("THERMAL REACTIVE") : qsTr("ILLUMINATED"))
                                                 font.pixelSize: 10
                                                 font.bold: true
                                                 font.letterSpacing: 1.5
@@ -338,11 +387,309 @@ ApplicationWindow {
 
                                             Text {
                                                 Layout.alignment: Qt.AlignHCenter
-                                                text: backend.lightsOn ? backend.color : "—"
+                                                text: !backend.lightsOn
+                                                    ? "—"
+                                                    : (backend.mode === "thermal" ? backend.fanTemperatureString : backend.color)
                                                 font.pixelSize: 14
                                                 font.bold: true
                                                 font.family: "monospace"
                                                 color: "white"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            // Thermaltake Fans & Thermal Telemetry Card
+                            Rectangle {
+                                Layout.fillWidth: true
+                                radius: Math.min(10, theme.radius)
+                                color: "#111116"
+                                border.color: (backend.mode === "thermal") ? backend.fanThermalStatusColor : Qt.rgba(1, 1, 1, 0.08)
+                                border.width: (backend.mode === "thermal") ? 2 : 1
+
+                                ColumnLayout {
+                                    anchors.fill: parent
+                                    anchors.margins: 16
+                                    spacing: 14
+
+                                    // Card Header
+                                    RowLayout {
+                                        Layout.fillWidth: true
+                                        spacing: 10
+
+                                        Rectangle {
+                                            width: 28
+                                            height: 28
+                                            radius: 14
+                                            color: Qt.rgba(255, 255, 255, 0.07)
+                                            Text {
+                                                anchors.centerIn: parent
+                                                text: "❋"
+                                                font.pixelSize: 16
+                                                color: backend.fanThermalStatusColor
+                                                RotationAnimation on rotation {
+                                                    running: backend.fanSpeedEstimate > 0
+                                                    loops: Animation.Infinite
+                                                    from: 0
+                                                    to: 360
+                                                    duration: Math.max(350, 2400 - (backend.fanSpeedEstimate * 19))
+                                                }
+                                            }
+                                        }
+
+                                        ColumnLayout {
+                                            spacing: 1
+                                            Text {
+                                                text: qsTr("THERMALTAKE FANS & TEMPERATURES")
+                                                font.pixelSize: 11
+                                                font.bold: true
+                                                font.letterSpacing: 1.2
+                                                color: "white"
+                                            }
+                                            Text {
+                                                text: backend.primarySensorName.length > 0
+                                                    ? qsTr("Primary Sensor: %1").arg(backend.primarySensorName)
+                                                    : qsTr("Hardware Thermal Sensors")
+                                                font.pixelSize: 10
+                                                color: "#888892"
+                                            }
+                                        }
+
+                                        Item { Layout.fillWidth: true }
+
+                                        // Status badge
+                                        Rectangle {
+                                            height: 24
+                                            width: statPillText.implicitWidth + 20
+                                            radius: 12
+                                            color: Qt.rgba(0, 0, 0, 0.5)
+                                            border.color: backend.fanThermalStatusColor
+                                            border.width: 1
+
+                                            RowLayout {
+                                                anchors.centerIn: parent
+                                                spacing: 6
+                                                Rectangle {
+                                                    width: 6
+                                                    height: 6
+                                                    radius: 3
+                                                    color: backend.fanThermalStatusColor
+                                                }
+                                                Text {
+                                                    id: statPillText
+                                                    text: qsTr("%1 • %2").arg(backend.fanThermalStatus.toUpperCase(), backend.fanTemperatureString)
+                                                    font.pixelSize: 10
+                                                    font.bold: true
+                                                    color: backend.fanThermalStatusColor
+                                                }
+                                            }
+                                        }
+
+                                        ToolButton {
+                                            text: "↻"
+                                            font.bold: true
+                                            onClicked: backend.refreshThermals()
+                                        }
+                                    }
+
+                                    // Gauge & Metrics Split Row
+                                    RowLayout {
+                                        Layout.fillWidth: true
+                                        spacing: 14
+
+                                        // Temperature Metric Box
+                                        Rectangle {
+                                            Layout.fillWidth: true
+                                            Layout.preferredHeight: 88
+                                            radius: Math.min(8, theme.radius)
+                                            color: "#181820"
+                                            border.color: Qt.rgba(1, 1, 1, 0.05)
+                                            border.width: 1
+
+                                            ColumnLayout {
+                                                anchors.fill: parent
+                                                anchors.margins: 12
+                                                spacing: 6
+
+                                                RowLayout {
+                                                    Layout.fillWidth: true
+                                                    Text {
+                                                        text: qsTr("FAN TEMPERATURE")
+                                                        font.pixelSize: 10
+                                                        font.bold: true
+                                                        color: "#888892"
+                                                    }
+                                                    Item { Layout.fillWidth: true }
+                                                    Text {
+                                                        text: backend.fanThermalStatus
+                                                        font.pixelSize: 10
+                                                        font.bold: true
+                                                        color: backend.fanThermalStatusColor
+                                                    }
+                                                }
+
+                                                Text {
+                                                    text: backend.fanTemperatureString
+                                                    font.pixelSize: 22
+                                                    font.bold: true
+                                                    color: "white"
+                                                }
+
+                                                Rectangle {
+                                                    Layout.fillWidth: true
+                                                    height: 6
+                                                    radius: 3
+                                                    color: "#282834"
+
+                                                    Rectangle {
+                                                        height: parent.height
+                                                        radius: 3
+                                                        width: parent.width * Math.max(0.06, Math.min(1.0, (backend.fanTemperature - 25.0) / 65.0))
+                                                        color: backend.fanThermalStatusColor
+
+                                                        Behavior on width {
+                                                            NumberAnimation { duration: 300 }
+                                                        }
+                                                        Behavior on color {
+                                                            ColorAnimation { duration: 300 }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+
+                                        // Fan Speed Box
+                                        Rectangle {
+                                            Layout.fillWidth: true
+                                            Layout.preferredHeight: 88
+                                            radius: Math.min(8, theme.radius)
+                                            color: "#181820"
+                                            border.color: Qt.rgba(1, 1, 1, 0.05)
+                                            border.width: 1
+
+                                            ColumnLayout {
+                                                anchors.fill: parent
+                                                anchors.margins: 12
+                                                spacing: 6
+
+                                                RowLayout {
+                                                    Layout.fillWidth: true
+                                                    Text {
+                                                        text: qsTr("FAN SPEED")
+                                                        font.pixelSize: 10
+                                                        font.bold: true
+                                                        color: "#888892"
+                                                    }
+                                                    Item { Layout.fillWidth: true }
+                                                    Text {
+                                                        text: backend.fanRpm > 0 ? qsTr("%1 RPM").arg(backend.fanRpm) : qsTr("ESTIMATE")
+                                                        font.pixelSize: 10
+                                                        font.bold: true
+                                                        color: theme.accent
+                                                    }
+                                                }
+
+                                                Text {
+                                                    text: backend.fanSpeedEstimate + "%"
+                                                    font.pixelSize: 22
+                                                    font.bold: true
+                                                    color: "white"
+                                                }
+
+                                                Rectangle {
+                                                    Layout.fillWidth: true
+                                                    height: 6
+                                                    radius: 3
+                                                    color: "#282834"
+
+                                                    Rectangle {
+                                                        height: parent.height
+                                                        radius: 3
+                                                        width: parent.width * (backend.fanSpeedEstimate / 100.0)
+                                                        color: theme.accent
+
+                                                        Behavior on width {
+                                                            NumberAnimation { duration: 300 }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    // Fan Profiles & Thermal Reactive toggle
+                                    ColumnLayout {
+                                        Layout.fillWidth: true
+                                        spacing: 6
+
+                                        RowLayout {
+                                            Layout.fillWidth: true
+                                            Text {
+                                                text: qsTr("THERMALTAKE FAN PROFILE")
+                                                font.pixelSize: 10
+                                                font.bold: true
+                                                font.letterSpacing: 1.1
+                                                color: "#888892"
+                                            }
+                                            Item { Layout.fillWidth: true }
+                                            Button {
+                                                text: backend.thermalReactive ? qsTr("Thermal Reactive RGB Active (T)") : qsTr("Sync RGB to Thermals (T)")
+                                                flat: true
+                                                highlighted: backend.thermalReactive
+                                                font.pixelSize: 11
+                                                Material.roundedScale: theme.radius
+                                                onClicked: backend.toggleThermalReactive()
+                                            }
+                                        }
+
+                                        RowLayout {
+                                            Layout.fillWidth: true
+                                            spacing: 8
+
+                                            Repeater {
+                                                model: [
+                                                    { name: qsTr("Silent"), id: "silent" },
+                                                    { name: qsTr("Standard"), id: "standard" },
+                                                    { name: qsTr("Performance"), id: "performance" },
+                                                    { name: qsTr("Full Speed"), id: "full_speed" }
+                                                ]
+
+                                                delegate: Button {
+                                                    Layout.fillWidth: true
+                                                    text: modelData.name
+                                                    highlighted: backend.fanSpeedProfile === modelData.id
+                                                    Material.roundedScale: theme.radius
+                                                    onClicked: backend.setFanSpeedProfile(modelData.id)
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    // Additional Sensors mini chips
+                                    Flow {
+                                        Layout.fillWidth: true
+                                        spacing: 8
+                                        visible: backend.thermalSensors.length > 0
+
+                                        Repeater {
+                                            model: backend.thermalSensors
+
+                                            delegate: Rectangle {
+                                                height: 22
+                                                width: sensorChipText.implicitWidth + 14
+                                                radius: 11
+                                                color: Qt.rgba(255, 255, 255, 0.05)
+                                                border.color: Qt.rgba(255, 255, 255, 0.08)
+                                                border.width: 1
+
+                                                Text {
+                                                    id: sensorChipText
+                                                    anchors.centerIn: parent
+                                                    text: modelData.name + ": " + modelData.tempStr
+                                                    font.pixelSize: 10
+                                                    color: "#aaa"
+                                                }
                                             }
                                         }
                                     }
@@ -371,6 +718,7 @@ ApplicationWindow {
                                             { name: qsTr("Static"), id: "static" },
                                             { name: qsTr("Breathing"), id: "breathing" },
                                             { name: qsTr("Spectrum"), id: "spectrum" },
+                                            { name: qsTr("Thermal"), id: "thermal" },
                                             { name: qsTr("Off"), id: "off" }
                                         ]
 
@@ -519,8 +867,8 @@ ApplicationWindow {
 
             Rectangle {
                 anchors.centerIn: parent
-                width: 480
-                height: 380
+                width: 500
+                height: 420
                 radius: theme.radius
                 color: "#1c1c22"
                 border.color: theme.accent
@@ -565,6 +913,9 @@ ApplicationWindow {
 
                         Text { text: "S"; font.bold: true; font.family: "monospace"; color: theme.accent }
                         Text { text: qsTr("Sync with Omarchy desktop accent"); color: "#eee" }
+
+                        Text { text: "T"; font.bold: true; font.family: "monospace"; color: theme.accent }
+                        Text { text: qsTr("Toggle Thermal Reactive lighting mode"); color: "#eee" }
 
                         Text { text: "1 - 5"; font.bold: true; font.family: "monospace"; color: theme.accent }
                         Text { text: qsTr("Apply color presets"); color: "#eee" }
